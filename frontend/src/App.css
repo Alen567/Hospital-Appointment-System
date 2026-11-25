@@ -1,0 +1,50 @@
+#root {
+  min-height: 100vh;
+}
+
+.app-container {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 24px;
+  background: #f1f5f9;
+  font-family: Arial, sans-serif;
+}
+
+.welcome-card {
+  width: 100%;
+  max-width: 600px;
+  padding: 48px 32px;
+  background: white;
+  border-radius: 16px;
+  text-align: center;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+}
+
+.welcome-card h1 {
+  color: #0f766e;
+  font-size: 42px;
+  margin-bottom: 10px;
+}
+
+.welcome-card h2 {
+  color: #334155;
+  font-size: 22px;
+}
+
+.welcome-card p {
+  color: #64748b;
+  line-height: 1.7;
+}
+
+.status {
+  margin-top: 30px;
+  padding: 16px;
+  background: #f0fdfa;
+  border-radius: 8px;
+  color: #115e59;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
