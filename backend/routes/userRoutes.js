@@ -4,6 +4,7 @@ const express = require("express");
 const {
     getProfile,
     updateProfile,
+    uploadProfileImage,
     getPatients,
     getMyPatients,
     setPatientActive
@@ -13,6 +14,8 @@ const {
     authenticateToken,
     authorizeRoles
 } = require("../middleware/authMiddleware");
+
+const upload = require("../middleware/uploadMiddleware");
 
 const router = express.Router();
 
@@ -41,6 +44,13 @@ router.patch(
     authenticateToken,
     authorizeRoles("admin"),
     setPatientActive
+);
+
+router.post(
+    "/profile/image",
+    authenticateToken,
+    upload.single("image"),
+    uploadProfileImage
 );
 
 module.exports = router;

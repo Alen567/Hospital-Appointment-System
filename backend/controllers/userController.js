@@ -1,7 +1,111 @@
 
 const pool = require("../config/db");
+const {
+    PutObjectCommand,
+    DeleteObjectCommand,
+    GetObjectCommand
+} = require("@aws-sdk/client-s3");
 
+const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
+const { randomUUID } = require("crypto");
+const s3 = require("../config/s3");
 // Get the currently logged-in user's complete profile.
+
+// Upload or replace the current user's profile image.
+const uploadProfileImage = async (req, res, next) => {
+    let newKey;
+
+    try {
+        if (!req.file) {
+            return res.status(400).json({
+                success: false,
+                message: "Please select an image to upload"
+            });
+        }
+
+        const allowedTypes = {
+            "image/jpeg": "jpg",
+            "image/png": "png",
+            "image/webp": "webp"
+        };
+
+        const extension = allowedTypes[req.file.mimetype];
+
+        if (!extension) {
+            return res.status(400).json({
+                success: false,
+                message: "Only JPEG, PNG, and WebP images are allowed"
+            });
+        }
+
+        const bucket = process.env.AWS_S3_BUCKET;
+
+        if (!bucket) {
+            throw new Error("AWS_S3_BUCKET is not configured");
+        }
+
+        const previousResult = await pool.query(
+            "SELECT profile_image_key FROM users WHERE id = $1",
+            [req.user.id]
+        );
+
+        if (previousResult.rows.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found"
+            });
+        }
+
+        const previousKey = previousResult.rows[0].profile_image_key;
+
+        newKey = `profile-images/${req.user.id}/${randomUUID()}.${extension}`;
+
+        await s3.send(new PutObjectCommand({
+            Bucket: bucket,
+            Key: newKey,
+            Body: req.file.buffer,
+            ContentType: req.file.mimetype
+        }));
+
+        try {
+            await pool.query(
+                `UPDATE users
+                 SET profile_image_key = $1,
+                     updated_at = CURRENT_TIMESTAMP
+                 WHERE id = $2`,
+                [newKey, req.user.id]
+            );
+        } catch (databaseError) {
+            await s3.send(new DeleteObjectCommand({
+                Bucket: bucket,
+                Key: newKey
+            }));
+
+            throw databaseError;
+        }
+
+        if (previousKey) {
+            try {
+                await s3.send(new DeleteObjectCommand({
+                    Bucket: bucket,
+                    Key: previousKey
+                }));
+            } catch (deleteError) {
+                console.error("Could not delete previous profile image:", deleteError.message);
+            }
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: "Profile image uploaded successfully",
+            profile_image_key: newKey
+        });
+
+    } catch (error) {
+        next(error);
+    }
+};
+
 const getProfile = async (req, res, next) => {
     try {
         const userResult = await pool.query(
@@ -20,6 +124,24 @@ const getProfile = async (req, res, next) => {
         }
 
         const user = userResult.rows[0];
+
+        // Generate a temporary URL for the private profile image.
+        user.profile_image_url = null;
+
+        if (user.profile_image_key) {
+            try {
+                const command = new GetObjectCommand({
+                    Bucket: process.env.AWS_S3_BUCKET,
+                    Key: user.profile_image_key
+                });
+
+                user.profile_image_url = await getSignedUrl(s3, command, {
+                    expiresIn: 900
+                });
+            } catch (error) {
+                console.error("Could not generate profile image URL:", error.message);
+            }
+        }
 
         if (user.role === "doctor") {
             const doctorResult = await pool.query(
@@ -376,10 +498,10 @@ const setPatientActive = async (req, res, next) => {
     }
 };
 
-
 module.exports = {
     getProfile,
     updateProfile,
+    uploadProfileImage,
     getPatients,
     getMyPatients,
     setPatientActive

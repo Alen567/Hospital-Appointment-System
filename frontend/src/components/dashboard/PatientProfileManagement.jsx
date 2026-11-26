@@ -1,5 +1,6 @@
 
 import { useEffect, useState } from "react";
+
 import {
     User,
     Save,
@@ -16,6 +17,7 @@ import api from "../../services/api";
 
 function PatientProfileManagement() {
     const [profile, setProfile] = useState(null);
+    const [imageUploading, setImageUploading] = useState(false);
 
     const [form, setForm] = useState({
         name: "",
@@ -119,6 +121,62 @@ function PatientProfileManagement() {
         }
     };
 
+    const handleImageUpload = async (e) => {
+        const file = e.target.files[0];
+
+        if (!file) return;
+
+        setError("");
+        setSuccess("");
+
+        const allowedTypes = [
+            "image/jpeg",
+            "image/png",
+            "image/webp"
+        ];
+
+        if (!allowedTypes.includes(file.type)) {
+            setError("Only JPEG, PNG, and WebP images are allowed.");
+            e.target.value = "";
+            return;
+        }
+
+        if (file.size > 5 * 1024 * 1024) {
+            setError("Image size must be 5 MB or less.");
+            e.target.value = "";
+            return;
+        }
+
+        try {
+            setImageUploading(true);
+
+            const formData = new FormData();
+            formData.append("image", file);
+
+            await api.post("/users/profile/image", formData, {
+                headers: {
+                    "Content-Type": "multipart/form-data"
+                }
+            });
+
+            const response = await api.get("/users/profile");
+            setProfile(response.data.user);
+
+            setSuccess("Profile picture updated successfully.");
+
+        } catch (err) {
+            console.error("Error uploading profile image:", err);
+
+            setError(
+                err.response?.data?.message ||
+                "Unable to upload your profile picture."
+            );
+        } finally {
+            setImageUploading(false);
+            e.target.value = "";
+        }
+    };
+
     const formatDate = (date) => {
         if (!date) return "Not available";
 
@@ -212,11 +270,22 @@ function PatientProfileManagement() {
                 </div>
 
                 <div className="profile-account-header">
-                    <div className="profile-large-avatar">
-                        {profile.name?.charAt(0).toUpperCase() || "P"}
+
+                    <div className="profile-avatar-section">
+                        <div className="profile-large-avatar">
+                            {profile.profile_image_url ? (
+                                <img
+                                    src={profile.profile_image_url}
+                                    alt="Profile"
+                                    className="profile-avatar-image"
+                                />
+                            ) : (
+                                profile.name?.charAt(0).toUpperCase() || "P"
+                            )}
+                        </div>
                     </div>
 
-                    <div>
+                    <div className="profile-account-details">
                         <h3>{profile.name}</h3>
                         <p>{profile.email}</p>
 
@@ -232,6 +301,27 @@ function PatientProfileManagement() {
                                 : "Inactive Account"}
                         </span>
                     </div>
+
+                    <div className="profile-image-upload">
+                        <label>
+                            <input
+                                type="file"
+                                accept="image/jpeg,image/png,image/webp"
+                                onChange={handleImageUpload}
+                                disabled={imageUploading}
+                                hidden
+                            />
+
+                            <span className="profile-image-button">
+                                {imageUploading
+                                    ? "Uploading..."
+                                    : "Change Picture"}
+                            </span>
+                        </label>
+
+                        <small>JPEG, PNG or WebP. Maximum 5 MB.</small>
+                    </div>
+
                 </div>
 
                 <div className="profile-readonly-grid">
