@@ -18,17 +18,17 @@ import api from "../../services/api";
 function formatDate(value) {
     if (!value) return "—";
 
-    const [year, month, day] = String(value).slice(0, 10).split("-");
+    const [year, month, day] = String(value)
+        .slice(0, 10)
+        .split("-");
 
-    return new Date(
-        Number(year),
-        Number(month) - 1,
-        Number(day)
-    ).toLocaleDateString("en-IN", {
-        day: "numeric",
-        month: "short",
-        year: "numeric"
-    });
+    const months = [
+        "Jan", "Feb", "Mar", "Apr",
+        "May", "Jun", "Jul", "Aug",
+        "Sep", "Oct", "Nov", "Dec"
+    ];
+
+    return `${Number(day)} ${months[Number(month) - 1]} ${year}`;
 }
 
 function formatTime(value) {
@@ -239,7 +239,7 @@ function PatientAppointmentManagement() {
                                 <div className="appointment-card-header">
                                     <div>
                                         <h3>
-                                            Dr. {appointment.doctor_name}
+                                            {appointment.doctor_name}
                                         </h3>
                                         <p>
                                             {appointment.specialization || "General Practitioner"}

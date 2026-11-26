@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import api from "../../services/api";
 
@@ -24,16 +25,16 @@ import DoctorProfileManagement
     from "../../components/dashboard/DoctorProfileManagement";
 
 const navItems = [
-    { label: "Overview", icon: "dashboard", target: "overview", active: true },
+    { label: "Overview", icon: "dashboard", target: "overview" },
     { label: "Appointments", icon: "appointments", target: "appointments" },
-    { label: "Availability", icon: "appointments", target: "availability" },
+    { label: "Availability", icon: "availability", target: "availability" },
     { label: "Patients", icon: "patients", target: "patients" },
     { label: "My Profile", icon: "profile", target: "profile" }
 ];
 
-
-
 function DoctorDashboard() {
+    const [activeTarget, setActiveTarget] = useState("overview");
+
     const [overview, setOverview] = useState({
         totalAppointments: 0,
         totalPatients: 0,
@@ -119,70 +120,77 @@ function DoctorDashboard() {
             navItems={navItems}
             title="Doctor Dashboard"
             subtitle="View your appointments and manage patient care."
+            activeTarget={activeTarget}
+            onNavigate={setActiveTarget}
         >
+            {activeTarget === "overview" ? (
+                <>
+                    {/* Summary Cards */}
 
-            {/* Overview */}
-
-            <div id="overview" className="dashboard-stats">
-
-                {stats.map((stat) => {
-                    const Icon = stat.icon;
-
-                    return (
-                        <div className="stat-card" key={stat.label}>
-                            <div className="stat-card-top">
-                                <div className={`stat-icon ${stat.color}`}>
-                                    <Icon size={22} />
-                                </div>
-
-                                <ArrowUpRight
-                                    size={19}
-                                    className="stat-arrow"
-                                />
-                            </div>
-
-                            <h2>
-                                {overviewLoading ? "..." : stat.value}
-                            </h2>
-
-                            <h3>{stat.label}</h3>
-                            <p>Appointment overview</p>
+                    {overviewError && (
+                        <div className="dashboard-error">
+                            {overviewError}
                         </div>
-                    );
-                })}
+                    )}
 
-            </div>
+                    <div className="dashboard-stats">
+                        {stats.map((stat) => {
+                            const Icon = stat.icon;
 
-            {overviewError && (
-                <div className="department-alert">
-                    {overviewError}
+                            return (
+                                <div
+                                    className="stat-card"
+                                    key={stat.label}
+                                >
+                                    <div className="stat-card-top">
+                                        <div className={`stat-icon ${stat.color}`}>
+                                            <Icon size={23} />
+                                        </div>
 
-                    <button
-                        type="button"
-                        onClick={fetchOverview}
-                        disabled={overviewLoading}
-                    >
-                        Retry
-                    </button>
-                </div>
+                                        <ArrowUpRight
+                                            size={19}
+                                            className="stat-arrow"
+                                        />
+                                    </div>
+
+                                    <div className="stat-info">
+                                        <p>{stat.label}</p>
+
+                                        <h2>
+                                            {overviewLoading
+                                                ? "..."
+                                                : stat.value}
+                                        </h2>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+
+                    <DoctorAppointmentManagement />
+                    <DoctorAvailabilityManagement />
+                    <DoctorPatientManagement />
+                    <DoctorProfileManagement />
+                </>
+            ) : (
+                <>
+                    {activeTarget === "appointments" && (
+                        <DoctorAppointmentManagement />
+                    )}
+
+                    {activeTarget === "availability" && (
+                        <DoctorAvailabilityManagement />
+                    )}
+
+                    {activeTarget === "patients" && (
+                        <DoctorPatientManagement />
+                    )}
+
+                    {activeTarget === "profile" && (
+                        <DoctorProfileManagement />
+                    )}
+                </>
             )}
-
-            {/* Appointments */}
-
-            <DoctorAppointmentManagement />
-
-            {/* Availability Management */}
-
-            <DoctorAvailabilityManagement />
-
-            {/* Patients */}
-
-            <DoctorPatientManagement />
-
-            {/* My Profile */}
-
-            <DoctorProfileManagement />
-
         </DashboardLayout>
     );
 }

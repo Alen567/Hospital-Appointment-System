@@ -14,11 +14,20 @@ import {
 
 import api from "../../services/api";
 
-import DepartmentManagement from "../../components/dashboard/DepartmentManagement";
-import DoctorManagement from "../../components/dashboard/DoctorManagement";
-import PatientManagement from "../../components/dashboard/PatientManagement";
-import DashboardLayout from "../../components/dashboard/DashboardLayout";
-import AppointmentManagement from "../../components/dashboard/AppointmentManagement";
+import DepartmentManagement
+    from "../../components/dashboard/DepartmentManagement";
+
+import DoctorManagement
+    from "../../components/dashboard/DoctorManagement";
+
+import PatientManagement
+    from "../../components/dashboard/PatientManagement";
+
+import DashboardLayout
+    from "../../components/dashboard/DashboardLayout";
+
+import AppointmentManagement
+    from "../../components/dashboard/AppointmentManagement";
 
 // Sidebar navigation
 const navItems = [
@@ -83,6 +92,7 @@ const statDefinitions = [
 ];
 
 function AdminDashboard() {
+    const [activeTarget, setActiveTarget] = useState("overview");
 
     const [counts, setCounts] = useState({
         patients: null,
@@ -122,7 +132,7 @@ function AdminDashboard() {
                 appointments: getCount(results[3], "appointments")
             });
 
-            if (results.some(result => result.status === "rejected")) {
+            if (results.some((result) => result.status === "rejected")) {
                 setStatsError(
                     "Some dashboard statistics could not be loaded."
                 );
@@ -132,6 +142,7 @@ function AdminDashboard() {
             console.error("Dashboard statistics error:", error);
 
             setStatsError("Unable to load dashboard statistics.");
+
         } finally {
             setStatsLoading(false);
         }
@@ -142,23 +153,10 @@ function AdminDashboard() {
         fetchDashboardStats();
     }, []);
 
-    // Scroll to a dashboard section.
-    const scrollToSection = (id) => {
-        document.getElementById(id)?.scrollIntoView({
-            behavior: "smooth",
-            block: "start"
-        });
-    };
-
-    return (
-        <DashboardLayout
-            role="admin"
-            navItems={navItems}
-            title="Admin Dashboard"
-            subtitle="Manage your healthcare system from one place."
-        >
-
-            {/* Dashboard Overview */}
+    // Dashboard Overview
+    const renderOverview = () => (
+        <>
+            {/* Dashboard Statistics and Welcome Section */}
             <div id="overview">
 
                 <div className="section-heading">
@@ -261,7 +259,7 @@ function AdminDashboard() {
 
                         <button
                             className="management-button"
-                            onClick={() => scrollToSection("doctors")}
+                            onClick={() => setActiveTarget("doctors")}
                         >
                             <UserPlus size={17} />
                             Manage Doctors
@@ -284,7 +282,7 @@ function AdminDashboard() {
 
                         <button
                             className="management-button"
-                            onClick={() => scrollToSection("departments")}
+                            onClick={() => setActiveTarget("departments")}
                         >
                             <Building2 size={17} />
                             Manage Departments
@@ -307,7 +305,7 @@ function AdminDashboard() {
 
                         <button
                             className="management-button"
-                            onClick={() => scrollToSection("patients")}
+                            onClick={() => setActiveTarget("patients")}
                         >
                             <ArrowUpRight size={17} />
                             View Patients
@@ -330,7 +328,7 @@ function AdminDashboard() {
 
                         <button
                             className="management-button"
-                            onClick={() => scrollToSection("appointments")}
+                            onClick={() => setActiveTarget("appointments")}
                         >
                             <ClipboardList size={17} />
                             View Appointments
@@ -341,6 +339,8 @@ function AdminDashboard() {
                 </div>
 
             </div>
+
+            {/* All Management Sections */}
 
             {/* Doctor Management */}
             <div id="doctors">
@@ -359,6 +359,46 @@ function AdminDashboard() {
             <div id="appointments">
                 <AppointmentManagement />
             </div>
+
+        </>
+    );
+
+    return (
+        <DashboardLayout
+            role="admin"
+            navItems={navItems}
+            activeTarget={activeTarget}
+            onNavigate={setActiveTarget}
+            title="Admin Dashboard"
+            subtitle="Manage your healthcare system from one place."
+        >
+
+            {/* Overview: Show statistics and all management sections */}
+            {activeTarget === "overview" && renderOverview()}
+
+            {/* Individual Sidebar Sections */}
+
+            {activeTarget === "doctors" && (
+                <div id="doctors">
+                    <DoctorManagement />
+                </div>
+            )}
+
+            {activeTarget === "departments" && (
+                <div id="departments">
+                    <DepartmentManagement />
+                </div>
+            )}
+
+            {activeTarget === "patients" && (
+                <PatientManagement />
+            )}
+
+            {activeTarget === "appointments" && (
+                <div id="appointments">
+                    <AppointmentManagement />
+                </div>
+            )}
 
         </DashboardLayout>
     );

@@ -295,7 +295,7 @@ function PatientDoctorDirectory() {
                                     </div>
 
                                     <div>
-                                        <h3>Dr. {doctor.name}</h3>
+                                        <h3>{doctor.name}</h3>
                                         <span>{doctor.specialization}</span>
                                     </div>
                                 </div>

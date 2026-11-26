@@ -225,7 +225,7 @@ const getAvailableSlots = async (req, res, next) => {
             `SELECT
                 s.id,
                 s.doctor_id,
-                s.slot_date,
+                s.slot_date::text AS slot_date,
                 s.start_time,
                 s.end_time,
                 s.is_booked
@@ -303,7 +303,7 @@ const getDoctorCalendar = async (req, res, next) => {
             `SELECT
                 s.id,
                 s.doctor_id,
-                s.slot_date,
+                s.slot_date::text AS slot_date,
                 s.start_time,
                 s.end_time,
                 s.is_booked,
@@ -386,7 +386,7 @@ const getMyDoctorCalendar = async (req, res, next) => {
             `SELECT
                 s.id,
                 s.doctor_id,
-                s.slot_date,
+                s.slot_date::text AS slot_date,
                 s.start_time,
                 s.end_time,
                 s.is_booked,
@@ -735,41 +735,46 @@ const bookAppointment = async (req, res, next) => {
 
 
 const getMyAppointments = async (req, res, next) => {
-  try {
-    const result = await pool.query(
-      `SELECT
-         a.id AS appointment_id,
-         a.appointment_status AS status,
-         a.reason,
-         a.created_at,
-         s.id AS slot_id,
-         s.slot_date,
-         s.start_time,
-         s.end_time,
-         d.id AS doctor_id,
-         du.name AS doctor_name,
-         d.specialization,
-         d.qualification,
-         d.consultation_fee,
-         dep.name AS department
-       FROM appointments a
-       JOIN doctor_slots s ON s.id = a.slot_id
-       JOIN doctors d ON d.id = a.doctor_id
-       JOIN users du ON du.id = d.user_id
-       LEFT JOIN departments dep ON dep.id = d.department_id
-       WHERE a.patient_id = $1
-       ORDER BY s.slot_date DESC, s.start_time DESC`,
-      [req.user.id]
-    );
+    try {
+        const result = await pool.query(
+            `SELECT
+                a.id AS appointment_id,
+                a.appointment_status AS status,
+                a.reason,
+                a.created_at,
+                s.id AS slot_id,
+                s.slot_date::text AS slot_date,
+                s.start_time,
+                s.end_time,
+                d.id AS doctor_id,
+                du.name AS doctor_name,
+                d.specialization,
+                d.qualification,
+                d.consultation_fee,
+                dep.name AS department
+             FROM appointments a
+             JOIN doctor_slots s
+                ON s.id = a.slot_id
+                AND s.doctor_id = a.doctor_id
+             JOIN doctors d
+                ON d.id = s.doctor_id
+             JOIN users du
+                ON du.id = d.user_id
+             LEFT JOIN departments dep
+                ON dep.id = d.department_id
+             WHERE a.patient_id = $1
+             ORDER BY s.slot_date DESC, s.start_time DESC`,
+            [req.user.id]
+        );
 
-    return res.json({
-      success: true,
-      count: result.rows.length,
-      appointments: result.rows,
-    });
-  } catch (error) {
-    next(error);
-  }
+        return res.json({
+            success: true,
+            count: result.rows.length,
+            appointments: result.rows,
+        });
+    } catch (error) {
+        next(error);
+    }
 };
 
 
@@ -866,7 +871,7 @@ const getDoctorAppointments = async (req, res, next) => {
          a.reason,
          a.created_at,
          s.id AS slot_id,
-         s.slot_date,
+         s.slot_date::text AS slot_date,
          s.start_time,
          s.end_time,
          u.id AS patient_id,
@@ -1103,7 +1108,7 @@ const getAllAppointments = async (req, res, next) => {
          a.created_at,
          a.updated_at,
          s.id AS slot_id,
-         s.slot_date,
+         s.slot_date::text AS slot_date,
          s.start_time,
          s.end_time,
          d.id AS doctor_id,

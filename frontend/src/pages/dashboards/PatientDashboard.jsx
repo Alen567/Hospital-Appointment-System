@@ -21,16 +21,32 @@ import PatientProfileManagement
 import PatientDoctorDirectory
     from "../../components/dashboard/PatientDoctorDirectory";
 
-
 const navItems = [
-    { label: "Overview", icon: "dashboard", target: "overview", active: true },
-    { label: "My Appointments", icon: "appointments", target: "appointments" },
-    { label: "Find Doctors", icon: "doctors", target: "doctors" },
-    { label: "My Profile", icon: "profile", target: "profile" }
+    {
+        label: "Overview",
+        icon: "dashboard",
+        target: "overview",
+        active: true
+    },
+    {
+        label: "My Appointments",
+        icon: "appointments",
+        target: "appointments"
+    },
+    {
+        label: "Find Doctors",
+        icon: "doctors",
+        target: "doctors"
+    },
+    {
+        label: "My Profile",
+        icon: "profile",
+        target: "profile"
+    }
 ];
 
-
 function PatientDashboard() {
+    const [activeTarget, setActiveTarget] = useState("overview");
 
     const [appointments, setAppointments] = useState([]);
     const [availableDoctors, setAvailableDoctors] = useState(0);
@@ -38,9 +54,7 @@ function PatientDashboard() {
     const [error, setError] = useState("");
 
     useEffect(() => {
-
         const fetchDashboardData = async () => {
-
             try {
                 setLoading(true);
                 setError("");
@@ -55,12 +69,15 @@ function PatientDashboard() {
                     appointmentsResponse.data.appointments || []
                 );
 
-                setAvailableDoctors(
-                    doctorsResponse.data.count ?? 0
+                const doctorList = doctorsResponse.data.doctors || [];
+
+                const uniqueDoctorIds = new Set(
+                    doctorList.map((doctor) => doctor.doctor_id)
                 );
 
-            } catch (error) {
+                setAvailableDoctors(uniqueDoctorIds.size);
 
+            } catch (error) {
                 console.error("Dashboard data error:", error);
 
                 setError(
@@ -74,23 +91,18 @@ function PatientDashboard() {
         };
 
         fetchDashboardData();
-
     }, []);
 
-
     const getLocalDateTime = (date, time) => {
-
         const datePart = String(date).slice(0, 10);
         const timePart = String(time).slice(0, 8);
 
         return new Date(`${datePart}T${timePart}`);
     };
 
-
     const now = new Date();
 
     const upcomingAppointments = appointments.filter((appointment) => {
-
         const appointmentDate = getLocalDateTime(
             appointment.slot_date,
             appointment.start_time
@@ -102,11 +114,9 @@ function PatientDashboard() {
         );
     });
 
-
     const completedAppointments = appointments.filter(
         (appointment) => appointment.status === "completed"
     );
-
 
     const stats = [
         {
@@ -135,26 +145,18 @@ function PatientDashboard() {
         }
     ];
 
-
-    return (
-        <DashboardLayout
-            role="patient"
-            navItems={navItems}
-            title="Patient Dashboard"
-            subtitle="Your health journey starts here. Manage your care with ease."
-        >
-
+    const renderOverview = () => (
+        <>
+            {/* Dashboard Statistics */}
             <div id="overview" className="dashboard-stats">
 
                 {stats.map((stat) => {
-
                     const Icon = stat.icon;
 
                     return (
                         <div className="stat-card" key={stat.label}>
 
                             <div className="stat-card-top">
-
                                 <div className={`stat-icon ${stat.color}`}>
                                     <Icon size={22} />
                                 </div>
@@ -163,7 +165,6 @@ function PatientDashboard() {
                                     size={19}
                                     className="stat-arrow"
                                 />
-
                             </div>
 
                             <h2>
@@ -184,11 +185,9 @@ function PatientDashboard() {
 
                         </div>
                     );
-
                 })}
 
             </div>
-
 
             {error && (
                 <div className="department-alert">
@@ -196,21 +195,49 @@ function PatientDashboard() {
                 </div>
             )}
 
-
+            {/* Appointment Management */}
             <PatientAppointmentManagement />
 
-
+            {/* Doctor Directory */}
             <div className="dashboard-section" id="doctors">
                 <PatientDoctorDirectory />
             </div>
 
-
+            {/* Patient Profile */}
             <PatientProfileManagement />
+        </>
+    );
+
+    return (
+        <DashboardLayout
+            role="patient"
+            navItems={navItems}
+            activeTarget={activeTarget}
+            onNavigate={setActiveTarget}
+            title="Patient Dashboard"
+            subtitle="Your health journey starts here. Manage your care with ease."
+        >
+
+            {/* Overview: Show everything */}
+            {activeTarget === "overview" && renderOverview()}
+
+            {/* Individual Sections */}
+            {activeTarget === "appointments" && (
+                <PatientAppointmentManagement />
+            )}
+
+            {activeTarget === "doctors" && (
+                <div className="dashboard-section" id="doctors">
+                    <PatientDoctorDirectory />
+                </div>
+            )}
+
+            {activeTarget === "profile" && (
+                <PatientProfileManagement />
+            )}
 
         </DashboardLayout>
     );
-
 }
-
 
 export default PatientDashboard;

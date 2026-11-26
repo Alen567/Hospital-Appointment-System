@@ -25,7 +25,8 @@ const iconMap = {
     patients: Users,
     doctors: Stethoscope,
     departments: Building2,
-    profile: UserRound
+    profile: UserRound,
+    availability: Activity
 };
 
 function DashboardLayout({
@@ -33,6 +34,8 @@ function DashboardLayout({
     navItems = [],
     title,
     subtitle,
+    activeTarget,
+    onNavigate,
     children
 }) {
     const { user, logout } = useAuth();
@@ -43,6 +46,21 @@ function DashboardLayout({
     const handleLogout = () => {
         logout();
         navigate("/login", { replace: true });
+    };
+
+    const handleNavigation = (item) => {
+        if (onNavigate) {
+            // Switch to the selected dashboard section.
+            onNavigate(item.target);
+        } else {
+            // Temporary fallback for dashboards not yet converted.
+            document.getElementById(item.target)?.scrollIntoView({
+                behavior: "smooth",
+                block: "start"
+            });
+        }
+
+        setSidebarOpen(false);
     };
 
     const fullName = user?.name || "User";
@@ -59,10 +77,11 @@ function DashboardLayout({
             )}
 
             {/* Sidebar */}
-            <aside className={`dashboard-sidebar ${
-                sidebarOpen ? "sidebar-open" : ""
-            }`}>
-
+            <aside
+                className={`dashboard-sidebar ${
+                    sidebarOpen ? "sidebar-open" : ""
+                }`}
+            >
                 <div className="sidebar-brand">
                     <div className="brand-icon">
                         <HeartPulse size={25} />
@@ -71,8 +90,10 @@ function DashboardLayout({
                     <span>CareConnect</span>
 
                     <button
+                        type="button"
                         className="sidebar-close"
                         onClick={() => setSidebarOpen(false)}
+                        aria-label="Close navigation"
                     >
                         <X size={22} />
                     </button>
@@ -85,20 +106,25 @@ function DashboardLayout({
 
                     <nav className="sidebar-navigation">
                         {navItems.map((item) => {
-                            const Icon = iconMap[item.icon];
+                            const Icon =
+                                iconMap[item.icon] || LayoutDashboard;
+
+                            const isActive = activeTarget
+                                ? activeTarget === item.target
+                                : item.active;
 
                             return (
-                                <a
-                                    key={item.label}
-                                    href={`#${item.target}`}
+                                <button
+                                    key={item.target}
+                                    type="button"
                                     className={`sidebar-link ${
-                                        item.active ? "active" : ""
+                                        isActive ? "active" : ""
                                     }`}
-                                    onClick={() => setSidebarOpen(false)}
+                                    onClick={() => handleNavigation(item)}
                                 >
-                                    {Icon && <Icon size={19} />}
+                                    <Icon size={19} />
                                     <span>{item.label}</span>
-                                </a>
+                                </button>
                             );
                         })}
                     </nav>
@@ -107,6 +133,7 @@ function DashboardLayout({
                 <div className="sidebar-bottom">
                     <div className="sidebar-security">
                         <Activity size={19} />
+
                         <div>
                             <strong>Secure Access</strong>
                             <span>Your account is protected</span>
@@ -114,6 +141,7 @@ function DashboardLayout({
                     </div>
 
                     <button
+                        type="button"
                         className="sidebar-logout"
                         onClick={handleLogout}
                     >
@@ -127,11 +155,12 @@ function DashboardLayout({
             <main className="dashboard-main">
 
                 <header className="dashboard-header">
-
                     <div className="header-left">
                         <button
+                            type="button"
                             className="mobile-menu-button"
                             onClick={() => setSidebarOpen(true)}
+                            aria-label="Open navigation"
                         >
                             <Menu size={23} />
                         </button>
@@ -155,20 +184,20 @@ function DashboardLayout({
                             {fullName.charAt(0).toUpperCase()}
                         </div>
                     </div>
-
                 </header>
 
                 <section className="dashboard-content">
-
                     <div className="dashboard-welcome">
                         <div>
-                            <h1>Welcome back, {fullName.split(" ")[0]}!</h1>
+                            <h1>
+                                Welcome back, {fullName}!
+                            </h1>
+
                             <p>{subtitle}</p>
                         </div>
                     </div>
 
                     {children}
-
                 </section>
 
                 <footer className="dashboard-footer">

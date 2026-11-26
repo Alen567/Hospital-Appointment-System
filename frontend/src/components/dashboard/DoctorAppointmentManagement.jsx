@@ -89,16 +89,16 @@ function DoctorAppointmentManagement() {
     };
 
     // Format appointment date.
-    const formatDate = (date) => {
+    function formatDate(date) {
         if (!date) return "—";
 
-        return new Date(date).toLocaleDateString("en-IN", {
-            day: "2-digit",
-            month: "short",
-            year: "numeric",
-            timeZone: "UTC"
-        });
-    };
+        const [year, month, day] = String(date).slice(0, 10).split("-");
+
+        return `${Number(day)} ${[
+            "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+            "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+        ][Number(month) - 1]} ${year}`;
+    }
 
     // Format time.
     const formatTime = (time) => {
