@@ -16,6 +16,20 @@ export function AuthProvider({ children }) {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
 
+    // Refresh the current user's complete profile.
+    const refreshUser = async () => {
+        try {
+            const response = await api.get("/users/profile");
+
+            setUser(response.data.user);
+
+            return response.data.user;
+        } catch (error) {
+            console.error("Failed to refresh user profile:", error);
+            return null;
+        }
+    };
+
     // Restore the session when the application starts.
     useEffect(() => {
 
@@ -30,10 +44,12 @@ export function AuthProvider({ children }) {
             }
 
             try {
-
                 const response = await api.get("/auth/me");
 
                 setUser(response.data.user);
+
+                // Load the complete profile, including the S3 image URL.
+                await refreshUser();
 
             } catch (error) {
 
@@ -46,9 +62,7 @@ export function AuthProvider({ children }) {
                 setUser(null);
 
             } finally {
-
                 setLoading(false);
-
             }
         };
 
@@ -68,7 +82,7 @@ export function AuthProvider({ children }) {
 
         const allowedRoles = ["patient", "doctor", "admin"];
 
-        if (!token || !user || !user.id || !allowedRoles.includes(user.role)){
+        if (!token || !user || !user.id || !allowedRoles.includes(user.role)) {
             throw new Error("Invalid login response from server.");
         }
 
@@ -77,6 +91,9 @@ export function AuthProvider({ children }) {
 
         // Update global user state.
         setUser(user);
+
+        // Fetch the complete profile, including the profile image.
+        await refreshUser();
 
         return user;
     };
@@ -100,8 +117,11 @@ export function AuthProvider({ children }) {
         // Save JWT.
         localStorage.setItem("careconnect_token", token);
 
-        // Update global authentication state.
+        // Update global user state.
         setUser(user);
+
+        // Fetch the complete profile.
+        await refreshUser();
 
         return user;
     };
@@ -120,7 +140,8 @@ export function AuthProvider({ children }) {
         isAuthenticated: Boolean(user),
         login,
         register,
-        logout
+        logout,
+        refreshUser
     };
 
     return (

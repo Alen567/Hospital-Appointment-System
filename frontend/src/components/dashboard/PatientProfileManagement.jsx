@@ -1,6 +1,6 @@
 
 import { useEffect, useState } from "react";
-
+import { useAuth } from "../../context/AuthContext";
 import {
     User,
     Save,
@@ -16,6 +16,7 @@ import {
 import api from "../../services/api";
 
 function PatientProfileManagement() {
+    const { refreshUser } = useAuth();
     const [profile, setProfile] = useState(null);
     const [imageUploading, setImageUploading] = useState(false);
 
@@ -159,8 +160,13 @@ function PatientProfileManagement() {
                 }
             });
 
-            const response = await api.get("/users/profile");
-            setProfile(response.data.user);
+            const updatedUser = await refreshUser();
+
+            if (updatedUser) {
+                setProfile(updatedUser);
+            } else {
+                await fetchProfile();
+            }
 
             setSuccess("Profile picture updated successfully.");
 

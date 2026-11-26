@@ -181,7 +181,15 @@ function DashboardLayout({
                         </div>
 
                         <div className="user-avatar">
-                            {fullName.charAt(0).toUpperCase()}
+                            {user?.profile_image_url ? (
+                                <img
+                                    src={user.profile_image_url}
+                                    alt={`${fullName} profile`}
+                                    className="header-avatar-image"
+                                />
+                            ) : (
+                                fullName.charAt(0).toUpperCase()
+                            )}
                         </div>
                     </div>
                 </header>
